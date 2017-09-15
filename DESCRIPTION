@@ -7,5 +7,12 @@ Depends: R (>= 3.3.0)
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-Imports: purrr,
-    readr
+Imports:
+    dplyr,
+    purrr,
+    readr, 
+    rgl, 
+    tibble
+RoxygenNote: 6.0.1
+Suggests: covr,
+    testthat

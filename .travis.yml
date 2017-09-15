@@ -1,0 +1,17 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+sudo: required
+cache: packages
+
+
+before_install:
+  - export RGL_USE_NULL=TRUE
+
+
+# We use clang, --without-libtool and --with-debug for faster build
+compiler:
+  - clang
+
+after_success:
+  - Rscript -e 'covr::codecov()'

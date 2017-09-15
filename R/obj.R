@@ -1,20 +1,53 @@
-plot.obj <- function(x, ..., homog = 1) {
+#' Plot OBJ form
+#'
+#' The value for `face_colour` is expanded to the length of the
+#' number of faces, so the application is discrete to each face,
+#' rather than varying between vertices.
+#' @param x obj model see `read_obj`
+#' @param ... passed to `rgl::shade3d`
+#' @param face_colour colours to apply to faces
+#' @param homog homogeneous fourth coordinate, defaults to 1
+#'
+#' @return the rgl shape3d object, invisibly
+#' @export
+#'
+#' @examples
+#' #x <- read_obj("https://raw.githubusercontent.com/Cecropia/thehallaframe/master/models/david.obj")
+#' #plot(x)
+#' #plot(x, col = "grey")
+#' #plot(x, col = "grey", homog = 1.5)
+#' #plot(x, col = "grey", homog = 2)
+#' #lapply(seq(1.5, 4, by = 0.5), function(a) plot(x, col = "grey", homog = a))
+#' f <- system.file("extdata/greek_bust.obj.zip", package = "obj")
+#' obj <- read_obj(f)
+#' lapply(seq(1.5, 4, by = 0.5), function(a) plot(obj, col = "grey", homog = a))
+plot.obj <- function(x, ..., face_colour = "grey", homog = 1) {
   tri <- structure(list(primitivetype = "triangle", material = NULL, normals = NULL, texcoords = NULL), class = c("mesh3d", "shape3d"))
   tri$vb <- t(cbind(as.matrix(x$vertex[, c("X", "Y", "Z")]), homog))
   tri$it <- t(as.matrix(x$face_vert[, c(".vertex0", ".vertex1", ".vertex2")]))
   ## colours with normals is eluding me ...
-  tri$normals <- cbind(t(cbind(as.matrix(x$normals[, c("nX", "nY", "nZ")]), 1)), 1)
-  tri$material <- list(color = rep("firebrick", ncol(tri$vb)))
-  rgl::shade3d(tri, ...)
+  ## set rgl::readOBJ, must use a different kind of implementation as they don't match up
+  #tri$normals <- cbind(c(0, 0, 0, 1), t(cbind(as.matrix(x$normals[, c("nX", "nY", "nZ")]), 1)))
+  tri <- rgl::addNormals(tri)
+  if (!is.null(face_colour)) tri$material <- list(color = rep(face_colour, length.out = ncol(tri$vb)))
+  invisible(rgl::shade3d(tri, ...))
 }
 
-#' Title
+#' Read OBJ
 #'
-#' @param x
-#' @param ...
+#' Read Wavefront OBJ format
 #'
-#' @return
+#'
+#' The `obj` structure contains the face and vertex and normal data from a .obj file,
+#' most of it anyway.
+#'
+#' @param x source of a OBJ model
+#' @param ... ignored
+#'
+#' @return an `obj` structure
 #' @export
+#' @importFrom tibble tibble
+#' @importFrom rgl addNormals shade3d
 #' @importFrom dplyr %>%
 #' @examples
 #' f <- system.file("extdata/greek_bust.obj.zip", package = "obj")
@@ -39,7 +72,7 @@ read_obj.character <- function(x, ...) {
   tri_faces <- readr::read_delim(paste0(face_text[face_text_length == 4L], collapse = "\n"), delim = " ",
                                  col_names = c("f", ".vdata0", ".vdata1", ".vdata2"))
 
-  face_vert <- tibble(.vertex0 = unlist(lapply(strsplit(tri_faces$.vdata0, "/"), "[[", 1)),
+  face_vert <- tibble::tibble(.vertex0 = unlist(lapply(strsplit(tri_faces$.vdata0, "/"), "[[", 1)),
                       .vertex1 = unlist(lapply(strsplit(tri_faces$.vdata1, "/"), "[[", 1)),
                       .vertex2 = unlist(lapply(strsplit(tri_faces$.vdata2, "/"), "[[", 1))) %>%
     dplyr::mutate_all(as.integer)
